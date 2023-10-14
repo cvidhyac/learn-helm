@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "webapp-nginx.fullname" . }}
-  annotations:
-    argocd.argoproj.io/sync-options: Validate=false
   labels:
     {{- include "webapp-nginx.labels" . | nindent 4 }}
 spec:
