@@ -218,8 +218,9 @@ app.kubernetes.io/name: {{- .Release.Name }}
 ```
 
 ```text
-{{ define "webapp-secrets" }}
-password: Passw0rd
+{{- define "webapp-secrets" }}
+Passw0rd
+{{- end }}
 ```
 
 ```yaml
@@ -239,5 +240,5 @@ metadata:
   labels:
     name: webapp-secret
 data:
-  { { include "webapp-secrets" | b64 | quote } }
+  {{ include "webapp-secrets" | b64 | quote }}
 ```
