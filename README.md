@@ -78,7 +78,9 @@ Also, we can even skip creating kubernetes resources based on flags.
 
 ex:
 
-serviceaccount.yaml - will be created only if the values.yaml specifies `serviceAccount.create = true`
+serviceaccount.yaml - will be created only if the values.yaml
+specifies `serviceAccount.create = true`
+
 ```shell
 {{- .Values.serviceAccount.create }}
 
@@ -109,17 +111,21 @@ metadata:
       name: "unknown"
     {{- end }}
 ```
+
 Example values.yaml
+
 ```yaml
 serviceAccount:
   create: true
   orgLabel: hr
 ```
+
 ### Helm Scopes
 
 - `.` character helps navigate scope hierarchy. Default is root scope.
-- The `with` keyword helps provide shortcuts to the scope hierarchy where it could be very deep.
-  - Eg. to access `.Values.app.ui.fg.name`, `.Values.app.ui.db.name`, enclose them in a `with` block.
+- The `with` conditional helps provide shortcuts to the scope hierarchy where it could be very deep.
+    - Eg. to access `.Values.app.ui.fg.name`, `.Values.app.ui.db.name`, enclose them in a `with`
+      block.
 - Use `$.` to access a root scoped variable from within a `with` scoped block.
 
 ```shell
@@ -141,9 +147,9 @@ data:
 
 ### Helm Ranges
 
-- Useful to populate a list block in a template. Eg. list of countries in a configmap.
+- Useful to populate a list/Map block in a template. Eg. list of countries in a configmap.
 
-Example to apply the `range` keyword
+#### Range on a List
 
 ```shell
 apiVersion: v1
@@ -167,4 +173,71 @@ regions:
   - new york
   - florida
   - georgia
+```
+
+#### Range on a Map
+
+```shell
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    {{- range $key, $value := .Values.serviceAccount.labels }}
+    {{ $key }}:{{ $value | quote }}
+    {{- end }}
+```
+
+```yaml
+serviceAccount:
+  labels:
+    app: webapp
+    color: pink
+    kubernetes.io/managed-by: Helm
+```
+
+### Named templates (Simple)
+
+- Name templates can be defined in `_some_name.tpl` file. The `.tpl` extension indicates helm that
+  it is not a regular template file.
+- With named templates imported as type `template`, we need to define them with right indentation.
+- To import a template with scope variables, add a `.` next to the template.
+
+Example template without need for scoping
+
+```text template_without_scoping.tpl
+{{- define "labels" }}
+appName: webapp
+appCode: ABC-001
+{{- end }}
+```
+
+```text template_with_scoping.tpl
+{{- define "custom" }}
+app.kubernetes.io/name: {{- .Release.Name }}
+{{- end }}
+```
+
+```text
+{{ define "webapp-secrets" }}
+password: Passw0rd
+```
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- template "labels" }}
+    {{- template "custom" . }} # Note the . character after the declaration to access scoped vars
+   
+```
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    name: webapp-secret
+data:
+  { { include "webapp-secrets" | b64 | quote } }
 ```
